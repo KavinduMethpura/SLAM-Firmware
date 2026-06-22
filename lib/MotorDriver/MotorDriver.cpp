@@ -47,10 +47,10 @@ void MotorDriver::drive(int leftSpeed, int rightSpeed) {
     int leftConstrained = constrain(leftSpeed, -255, 255);
     int rightConstrained = constrain(rightSpeed, -255, 255);
 
-    // Call helper for left motor
+    // Call helper for left motor (passing PWM channel)
     setMotorSpeed(leftConstrained, LEDC_PWM_CH_LEFT, PIN_MOTOR_L_IN1, PIN_MOTOR_L_IN2);
 
-    // Call helper for right motor
+    // Call helper for right motor (passing PWM channel)
     setMotorSpeed(rightConstrained, LEDC_PWM_CH_RIGHT, PIN_MOTOR_R_IN1, PIN_MOTOR_R_IN2);
 }
 
@@ -80,7 +80,7 @@ void MotorDriver::setMotorSpeed(int speed, uint8_t pwmChannel, uint8_t dirPin1, 
     //    - Write absolute speed to pwmChannel
     // 2. Check if speed is negative (< 0):
     //    - Set dirPin1 to LOW, dirPin2 to HIGH
-    //    - Write absolute speed (e.g. abs(speed)) to pwmChannel
+    //    - Write absolute speed (e.g. -speed) to pwmChannel
     // 3. Otherwise (speed is 0):
     //    - Set both dirPin1 and dirPin2 to LOW
     //    - Write 0 to pwmChannel

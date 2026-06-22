@@ -34,7 +34,7 @@
 // =============================================================================
 // LEDC PWM CONFIGURATION (ESP32 specific)
 // =============================================================================
-#define LEDC_PWM_FREQ       20000 // 20kHz frequency (above human hearing range,  Human hearing range is 20Hz–20kHz. Below 20kHz motors produce an audible whine. At 20kHz it's silent.)
+#define LEDC_PWM_FREQ       1000 // 1kHz frequency (optimal for L298N motor driver efficiency and response)
 #define LEDC_PWM_RES        8     // 8-bit resolution (0 - 255)
 #define LEDC_PWM_CH_LEFT    0     // PWM channel for left motor
 #define LEDC_PWM_CH_RIGHT   1     // PWM channel for right motor

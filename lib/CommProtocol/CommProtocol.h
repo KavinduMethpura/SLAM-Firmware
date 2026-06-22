@@ -36,6 +36,21 @@ public:
     bool isNewCommandAvailable();
 
     /**
+     * @brief Checks if a new system control command packet has arrived.
+     * 
+     * @return true if a new control command is available.
+     * @return false otherwise.
+     */
+    bool isNewControlAvailable();
+
+    /**
+     * @brief Retrieves the latest system control command character and resets the flag.
+     * 
+     * @return The control command character ('R', 'C', 'S') or '\0' if none.
+     */
+    char getControlCommand();
+
+    /**
      * @brief Retrieves the latest linear and angular velocities requested by the host,
      * and resets the new command flag.
      * 
@@ -77,6 +92,9 @@ private:
     float cmdLinearX;
     float cmdAngularZ;
     bool newCommandFlag;
+    
+    char cmdControl;
+    bool newControlFlag;
 
     /**
      * @brief Private helper to parse a complete message line once received.
