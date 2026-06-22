@@ -1,0 +1,10 @@
+# PlatformIO build files
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# VS Code directory
+.vscode/
+
+# Local configuration files containing credentials
+include/secrets.h

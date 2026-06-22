@@ -1,0 +1,76 @@
+#include "ServoScanner.h"
+
+ServoScanner::ServoScanner() 
+    : currentAngle(90), 
+      sweepMin(10), 
+      sweepMax(170), 
+      sweepStep(5), 
+      direction(1), 
+      lastMoveTime(0), 
+      stepDelayMs(40), // Standard settling delay for MG90S
+      sweepCompletedFlag(false) {
+}
+
+void ServoScanner::begin() {
+    // =========================================================================
+    // STEP 1: Attach the Servo Pin
+    // =========================================================================
+    // The ESP32Servo library requires calling attach() with:
+    // - Pin number (PIN_SERVO_SCAN)
+    // - Optional: min pulse width in microseconds (usually 544 for MG90S)
+    // - Optional: max pulse width in microseconds (usually 2400 for MG90S)
+    //
+    // Initialize the servo position to the starting/center angle (90 degrees).
+
+    // TODO: Implement servo attach and write startup position
+}
+
+bool ServoScanner::update() {
+    sweepCompletedFlag = false;
+    unsigned long currentTime = millis();
+
+    // =========================================================================
+    // STEP 2: Non-Blocking Timing Control
+    // =========================================================================
+    // We check if enough time has elapsed since the last move (currentTime - lastMoveTime >= stepDelayMs).
+    // If not, we immediately return false to allow other code (odometry, IMU) to run.
+
+    if (currentTime - lastMoveTime < stepDelayMs) {
+        return false;
+    }
+
+    lastMoveTime = currentTime;
+
+    // =========================================================================
+    // STEP 3: Servo Stepping Logic
+    // =========================================================================
+    // 1. Calculate the next angle: nextAngle = currentAngle + (direction * sweepStep).
+    // 2. Write the nextAngle to the servo: myServo.write(nextAngle).
+    // 3. Check boundaries:
+    //    - If nextAngle >= sweepMax:
+    //         Set direction = -1 (sweep down)
+    //         Set sweepCompletedFlag = true
+    //    - If nextAngle <= sweepMin:
+    //         Set direction = 1 (sweep up)
+    //         Set sweepCompletedFlag = true
+    // 4. Update currentAngle.
+    // 5. Return true to signal that the servo has moved to a new step, meaning
+    //    the main application can trigger a new ToF distance measurement.
+
+    // TODO: Implement the sweeping steps and boundary check logic here
+    
+    return false; // Replace when implemented
+}
+
+int ServoScanner::getAngle() const {
+    return currentAngle;
+}
+
+void ServoScanner::setSweepRange(int minAngle, int maxAngle) {
+    sweepMin = minAngle;
+    sweepMax = maxAngle;
+}
+
+bool ServoScanner::isSweepDone() const {
+    return sweepCompletedFlag;
+}
