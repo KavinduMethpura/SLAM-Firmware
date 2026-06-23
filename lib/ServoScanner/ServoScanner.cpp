@@ -22,7 +22,9 @@ void ServoScanner::begin() {
     //
     // Initialize the servo position to the starting/center angle (90 degrees).
 
-    // TODO: Implement servo attach and write startup position
+    myServo.attach(PIN_SERVO_SCAN, 500, 2400);
+    myServo.write(currentAngle);
+    lastMoveTime = millis();
 }
 
 bool ServoScanner::update() {
@@ -57,9 +59,19 @@ bool ServoScanner::update() {
     // 5. Return true to signal that the servo has moved to a new step, meaning
     //    the main application can trigger a new ToF distance measurement.
 
-    // TODO: Implement the sweeping steps and boundary check logic here
+    int nextAngle = currentAngle + (direction * sweepStep);
+    myServo.write(nextAngle);
     
-    return false; // Replace when implemented
+    if(nextAngle >= sweepMax){
+        direction = -1;
+        sweepCompletedFlag = true;
+    }else if(nextAngle <= sweepMin){
+        direction = 1;
+        sweepCompletedFlag = true;
+    }
+    
+    currentAngle = nextAngle;
+    return true;
 }
 
 int ServoScanner::getAngle() const {
