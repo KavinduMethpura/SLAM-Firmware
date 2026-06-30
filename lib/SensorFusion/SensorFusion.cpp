@@ -21,7 +21,16 @@ void SensorFusion::update(float encX, float encY, float encTheta, float gyroYawR
     // 2. Gyroscope delta heading:
     //    d_theta_gyro = gyroYawRate * dt
 
-    // TODO: Implement delta heading calculations here
+    float d_theta_enc = encTheta - prevEncTheta;
+    // Normalize d_theta_enc to [-PI, PI]
+    while (d_theta_enc > M_PI) {
+        d_theta_enc -= 2.0f * M_PI;
+    }
+    while (d_theta_enc < -M_PI) {
+        d_theta_enc += 2.0f * M_PI;
+    }
+    
+    float d_theta_gyro = gyroYawRate * dt;
 
     // =========================================================================
     // STEP 2: Fuse the Delta Headings (Complementary Filter)
@@ -35,8 +44,17 @@ void SensorFusion::update(float encX, float encY, float encTheta, float gyroYawR
     //    fusedTheta += d_theta_fused
     // Normalize fusedTheta to stay within [-PI, PI].
 
-    // TODO: Implement complementary filter heading fusion
-
+    float d_theta_fused = ALPHA_GYRO * d_theta_gyro + (1.0f - ALPHA_GYRO) * d_theta_enc;
+    fusedTheta += d_theta_fused;
+    
+    // Normalize fusedTheta to stay within [-PI, PI]
+    while (fusedTheta > M_PI) {
+        fusedTheta -= 2.0f * M_PI;
+    }
+    while (fusedTheta < -M_PI) {
+        fusedTheta += 2.0f * M_PI;
+    }
+    
     // =========================================================================
     // STEP 3: Compute Linear Displacement from Encoders
     // =========================================================================
@@ -50,7 +68,12 @@ void SensorFusion::update(float encX, float encY, float encTheta, float gyroYawR
     //    direction = (dx * cos(encTheta) + dy * sin(encTheta) >= 0) ? 1.0 : -1.0
     //    d_dist = d_dist * direction
 
-    // TODO: Compute encoder-based linear displacement (d_dist)
+    float dx = encX - prevEncX;
+    float dy = encY - prevEncY;
+    float d_dist = sqrtf(dx * dx + dy * dy);
+    
+    float direction = (dx * cosf(encTheta) + dy * sinf(encTheta) >= 0) ? 1.0f : -1.0f;
+    d_dist *= direction;
 
     // =========================================================================
     // STEP 4: Project Position Using Fused Heading
@@ -59,8 +82,9 @@ void SensorFusion::update(float encX, float encY, float encTheta, float gyroYawR
     //    fusedX += d_dist * cos(fusedTheta + d_theta_fused / 2.0f)
     //    fusedY += d_dist * sin(fusedTheta + d_theta_fused / 2.0f)
 
-    // TODO: Update fused position coordinates
-
+    fusedX += d_dist * cosf(fusedTheta + d_theta_fused / 2.0f);
+    fusedY += d_dist * sinf(fusedTheta + d_theta_fused / 2.0f);
+    
     // Save current encoder variables for the next cycle
     prevEncX = encX;
     prevEncY = encY;

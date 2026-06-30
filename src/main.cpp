@@ -6,6 +6,7 @@
 #include "ToFSensor.h"
 #include "IMUReader.h"
 #include "EncoderOdometry.h"
+#include "SensorFusion.h"
 
 MotorDriver motorDriver;
 ServoScanner servoScanner;
@@ -13,6 +14,7 @@ CommProtocol comm;
 ToFSensor tofSensor;
 IMUReader imuReader;
 EncoderOdometry odometry;
+SensorFusion fusion;
 
 // Helper function to perform a delay while continuously updating and testing the servo sweep
 void delayWithServoUpdate(unsigned long ms) {
@@ -34,20 +36,40 @@ void delayWithServoUpdate(unsigned long ms) {
             lastImuPrint = now;
         }
 
-        // Update encoder odometry at 50Hz (every 20ms)
+        // Update encoder odometry and sensor fusion at 50Hz (every 20ms)
         if (now - lastOdomUpdate >= 20) {
             float dt = (now - lastOdomUpdate) / 1000.0f;
             lastOdomUpdate = now;
+            
+            // 1. Update raw encoder odometry
             odometry.update(dt);
+            
+            // 2. Get the raw encoder pose
+            float encX, encY, encTheta;
+            odometry.getPose(encX, encY, encTheta);
+            
+            // 3. Get the latest gyroscope yaw rate
+            float gyroYawRate = imuReader.getGyroZ();
+            
+            // 4. Update the complementary filter sensor fusion
+            fusion.update(encX, encY, encTheta, gyroYawRate, dt);
         }
 
-        // Print odometry pose at 2Hz (every 500ms)
+        // Print pose comparison at 2Hz (every 500ms)
         if (now - lastOdomPrint >= 500) {
             float ox, oy, otheta;
             odometry.getPose(ox, oy, otheta);
+            
+            float fx, fy, ftheta;
+            fusion.getFusedPose(fx, fy, ftheta);
+            
             float linVel, angVel;
             odometry.getVelocities(linVel, angVel);
-            Serial.printf("[ODOM] Pose: X=%.3f m, Y=%.3f m, Theta=%.3f rad | Vel: Lin=%.3f m/s, Ang=%.3f rad/s\n", ox, oy, otheta, linVel, angVel);
+            
+            Serial.printf("[ODOM] Raw Encoder: X=%.3f m, Y=%.3f m, Theta=%.3f rad\n", ox, oy, otheta);
+            Serial.printf("[FUSION] Fused Pose: X=%.3f m, Y=%.3f m, Theta=%.3f rad\n", fx, fy, ftheta);
+            Serial.printf("[ODOM] Velocities  : Lin=%.3f m/s, Ang=%.3f rad/s\n", linVel, angVel);
+            
             lastOdomPrint = now;
         }
 
@@ -69,7 +91,7 @@ void setup() {
     // Initialize communication protocol (handles Serial initialization, WiFi connection, and UDP port listener)
     comm.begin();
     
-    Serial.println("[TEST] Initializing Motor Driver, Servo Scanner, ToF Sensor, IMU & Odometry...");
+    Serial.println("[TEST] Initializing Motor Driver, Servo Scanner, ToF Sensor, IMU, Odometry & Fusion...");
     
     motorDriver.begin();
     motorDriver.stop();
@@ -77,6 +99,8 @@ void setup() {
     servoScanner.begin();
     
     odometry.begin();
+    
+    fusion.begin();
     
     if (!tofSensor.begin()) {
         Serial.println("[TEST] ERROR: Failed to detect VL53L0X ToF sensor!");
