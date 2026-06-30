@@ -15,6 +15,13 @@ void ServoScanner::begin() {
     // =========================================================================
     // STEP 1: Attach the Servo Pin
     // =========================================================================
+    // Allocate only Timers 1, 2, and 3 for ESP32Servo.
+    // This prevents the library from using Timer 0, which is reserved for the
+    // MotorDriver PWM channels.
+    ESP32PWM::allocateTimer(1);
+    ESP32PWM::allocateTimer(2);
+    ESP32PWM::allocateTimer(3);
+
     // The ESP32Servo library requires calling attach() with:
     // - Pin number (PIN_SERVO_SCAN)
     // - Optional: min pulse width in microseconds (usually 544 for MG90S)

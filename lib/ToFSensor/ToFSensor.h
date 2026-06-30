@@ -14,7 +14,6 @@ public:
 
     /**
      * @brief Initializes the VL53L0X sensor and sets it to continuous reading mode.
-     * Optionally handles pulling the XSHUT reset pin HIGH.
      * 
      * @return true if initialization succeeded, false if sensor was not found.
      */

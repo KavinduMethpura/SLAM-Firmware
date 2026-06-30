@@ -2,16 +2,24 @@
 #include "config.h"
 #include "MotorDriver.h"
 #include "ServoScanner.h"
+#include "CommProtocol.h"
+#include "ToFSensor.h"
 
 MotorDriver motorDriver;
 ServoScanner servoScanner;
+CommProtocol comm;
+ToFSensor tofSensor;
 
 // Helper function to perform a delay while continuously updating and testing the servo sweep
 void delayWithServoUpdate(unsigned long ms) {
     unsigned long start = millis();
     while (millis() - start < ms) {
         if (servoScanner.update()) {
-            Serial.printf("[SERVO] Angle: %d\n", servoScanner.getAngle());
+            int angle = servoScanner.getAngle();
+            int dist = tofSensor.readDistance();
+            
+            Serial.printf("[SERVO] Angle: %d | [TOF] Distance: %d mm\n", angle, dist);
+            
             if (servoScanner.isSweepDone()) {
                 Serial.println("[SERVO] Sweep completed!");
             }
@@ -21,14 +29,21 @@ void delayWithServoUpdate(unsigned long ms) {
 }
 
 void setup() {
-    Serial.begin(115200);
-    delay(1000);
-    Serial.println("[TEST] Initializing Motor Driver & Servo Scanner...");
+    // Initialize communication protocol (handles Serial initialization, WiFi connection, and UDP port listener)
+    comm.begin();
+    
+    Serial.println("[TEST] Initializing Motor Driver, Servo Scanner & ToF Sensor...");
     
     motorDriver.begin();
     motorDriver.stop();
     
     servoScanner.begin();
+    
+    if (!tofSensor.begin()) {
+        Serial.println("[TEST] ERROR: Failed to detect VL53L0X ToF sensor!");
+    } else {
+        Serial.println("[TEST] VL53L0X ToF sensor successfully initialized.");
+    }
     
     Serial.println("[TEST] Initialized. Starting test loop in 3 seconds...");
     delay(3000);
