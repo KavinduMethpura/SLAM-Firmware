@@ -34,11 +34,16 @@ void EncoderOdometry::begin() {
     // =========================================================================
     // STEP 1: Set pin mode and attach interrupts
     // =========================================================================
+
     // 1. Configure PIN_ENCODER_L and PIN_ENCODER_R as INPUT (or INPUT_PULLUP if needed).
     // 2. Use attachInterrupt() to bind the pins to leftEncoderISR and rightEncoderISR.
     //    Use RISING or CHANGE depending on your encoder sensor disk properties.
     
-    // TODO: Implement pin modes and attachInterrupt here
+    pinMode(PIN_ENCODER_L, INPUT_PULLUP);
+    pinMode(PIN_ENCODER_R, INPUT_PULLUP);
+    
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_L), leftEncoderISR, RISING);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_R), rightEncoderISR, RISING);
 }
 
 void EncoderOdometry::update(float dt) {
@@ -70,7 +75,11 @@ void EncoderOdometry::update(float dt) {
     //    d_dist_L = d_ticks_L * METERS_PER_TICK
     //    d_dist_R = d_ticks_R * METERS_PER_TICK
     
-    // TODO: Implement delta distance calculation
+    long d_ticks_L = currentLeftTicks - prevLeftTicks;
+    long d_ticks_R = currentRightTicks - prevRightTicks;
+    
+    float d_dist_L = (float)d_ticks_L * METERS_PER_TICK;
+    float d_dist_R = (float)d_ticks_R * METERS_PER_TICK;
 
     // =========================================================================
     // STEP 4: Apply Differential Drive Kinematics
@@ -88,10 +97,23 @@ void EncoderOdometry::update(float dt) {
     // - Normalize theta to stay within [-PI, PI]:
     //   while (theta > PI) theta -= 2.0 * PI;
     //   while (theta < -PI) theta += 2.0 * PI;
+
+    float delta_d = (d_dist_R + d_dist_L) / 2.0f;
+    float delta_theta = (d_dist_R - d_dist_L) / WHEEL_BASE_M;
     
-    // TODO: Calculate center displacement and rotation change
-    // TODO: Update pose variables (x, y, theta)
-    // TODO: Normalize theta
+    float theta_mid = theta + (delta_theta / 2.0f);
+    
+    x += delta_d * cosf(theta_mid);
+    y += delta_d * sinf(theta_mid);
+    theta += delta_theta;
+    
+    // Normalize theta to stay within [-PI, PI]
+    while (theta > PI) {
+        theta -= 2.0f * PI;
+    }
+    while (theta < -PI) {
+        theta += 2.0f * PI;
+    }
 
     // =========================================================================
     // STEP 5: Calculate Speeds for Telemetry
@@ -99,7 +121,8 @@ void EncoderOdometry::update(float dt) {
     // - linearVelocity = delta_d / dt
     // - angularVelocity = delta_theta / dt
     
-    // TODO: Calculate linearVelocity and angularVelocity
+    linearVelocity = delta_d / dt;
+    angularVelocity = delta_theta / dt;
 
     // Save current ticks for the next loop comparison
     prevLeftTicks = currentLeftTicks;
