@@ -1,9 +1,13 @@
 #include "ToFSensor.h"
+#include <Wire.h>
 
 ToFSensor::ToFSensor() : lastDistance(-1) {
 }
 
 bool ToFSensor::begin() {
+    // Initialize I2C Bus with pins defined in config.h
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
+
     // =========================================================================
     // STEP 1: Initialize Pololu VL53L0X Library
     // =========================================================================

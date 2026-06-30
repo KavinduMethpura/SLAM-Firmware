@@ -1,4 +1,5 @@
 #include "IMUReader.h"
+#include <Wire.h>
 
 // MPU6050 Registers
 #define MPU6050_REG_PWR_MGMT_1  0x6B
@@ -22,10 +23,16 @@ bool IMUReader::begin() {
     // You must write 0x00 to the Power Management 1 register (0x6B) to wake it up.
     // Try writing to register 0x6B. If it fails, call recoverI2C() and try again.
 
-    // TODO: Write 0x00 to MPU6050_REG_PWR_MGMT_1.
-    // Return true if successful, false if it fails twice.
-    
-    return true; // Replace when implemented
+    if (writeRegister(MPU6050_REG_PWR_MGMT_1, 0x00)) {
+        return true;
+    } else {
+        recoverI2C();
+        if (writeRegister(MPU6050_REG_PWR_MGMT_1, 0x00)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 bool IMUReader::read() {
@@ -44,7 +51,21 @@ bool IMUReader::read() {
     //    - Bytes 10-11: Gyro Y
     //    - Bytes 12-13: Gyro Z
 
-    // TODO: Write register address and read 14 bytes into a buffer.
+    Wire.beginTransmission(ADDR_IMU_MPU6050);
+    Wire.write(MPU6050_REG_ACCEL_START);
+    Wire.endTransmission();
+
+    if(Wire.requestFrom(ADDR_IMU_MPU6050, 14) != 14){
+        return false;
+    }
+
+    int16_t ax = (Wire.read() << 8) | Wire.read();
+    int16_t ay = (Wire.read() << 8) | Wire.read();
+    int16_t az = (Wire.read() << 8) | Wire.read();
+    int16_t temperature = (Wire.read() << 8) | Wire.read();
+    int16_t gx = (Wire.read() << 8) | Wire.read();
+    int16_t gy = (Wire.read() << 8) | Wire.read();
+    int16_t gz = (Wire.read() << 8) | Wire.read();
     
     // =========================================================================
     // STEP 3: Parse and Scale the Raw Values
@@ -63,7 +84,16 @@ bool IMUReader::read() {
     //   gyroY = gyroY_scaled - gyroBiasY;
     //   gyroZ = gyroZ_scaled - gyroBiasZ;
 
-    // TODO: Implement parsing and scaling here.
+    accX = (float)ax / 16384.0f;
+    accY = (float)ay / 16384.0f;
+    accZ = (float)az / 16384.0f;
+    gyroX = (float)gx / 131.0f;
+    gyroY = (float)gy / 131.0f;
+    gyroZ = (float)gz / 131.0f;
+    
+    gyroX -= gyroBiasX;
+    gyroY -= gyroBiasY;
+    gyroZ -= gyroBiasZ;
 
     return true; // Replace when implemented
 }
@@ -86,7 +116,17 @@ void IMUReader::calibrate(int samples) {
     //    gyroBiasY = sumY / samples
     //    gyroBiasZ = sumZ / samples
 
-    // TODO: Implement calibration averaging loop here.
+    for(int i = 0; i < samples; i++){
+        read();
+        sumX += gyroX;
+        sumY += gyroY;
+        sumZ += gyroZ;
+        delay(3);
+    }
+    
+    gyroBiasX = sumX / samples;
+    gyroBiasY = sumY / samples;
+    gyroBiasZ = sumZ / samples;
     
     Serial.print("[IMU] Calibration complete! Biases: ");
     Serial.print(gyroBiasX); Serial.print(", ");
@@ -119,7 +159,26 @@ void IMUReader::recoverI2C() {
     //    - Wire.end()
     //    - Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL)
 
-    // TODO: Implement the toggling sequence here
+    pinMode(PIN_I2C_SDA, INPUT);
+    pinMode(PIN_I2C_SCL, OUTPUT);
+
+    if(digitalRead(PIN_I2C_SDA) == LOW){
+        for(int i = 0; i < 9; i++){
+            digitalWrite(PIN_I2C_SCL, LOW);
+            delayMicroseconds(5);
+            digitalWrite(PIN_I2C_SCL, HIGH);
+            delayMicroseconds(5);
+        }
+    }
+    
+    digitalWrite(PIN_I2C_SDA, LOW);
+    delayMicroseconds(5);
+    digitalWrite(PIN_I2C_SCL, INPUT);
+    delayMicroseconds(5);
+    digitalWrite(PIN_I2C_SDA, INPUT);
+
+    Wire.end();
+    Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
     
     Serial.println("[I2C] Bus recovery sequence finished.");
 }
