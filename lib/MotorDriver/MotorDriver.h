@@ -30,7 +30,18 @@ public:
      */
     void stop();
 
+    /**
+     * @brief Sets the calibration scaling factors to balance the motor speeds.
+     * 
+     * @param left Scaling factor for the left motor
+     * @param right Scaling factor for the right motor
+     */
+    void setCalibrationScales(float left, float right);
+
 private:
+    float leftScale;
+    float rightScale;
+
     /**
      * @brief Set speed and direction for a single motor using ESP32 LEDC API.
      * 

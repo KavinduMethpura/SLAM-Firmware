@@ -158,3 +158,13 @@ void EncoderOdometry::reset() {
 void EncoderOdometry::setTheta(float newTheta) {
     theta = newTheta;
 }
+
+void EncoderOdometry::getTicks(long &left, long &right) const {
+    long tempLeft, tempRight;
+    noInterrupts();
+    tempLeft = leftTickCount;
+    tempRight = rightTickCount;
+    interrupts();
+    left = tempLeft;
+    right = tempRight;
+}

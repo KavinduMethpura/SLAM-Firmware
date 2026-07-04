@@ -1,6 +1,6 @@
 #include "MotorDriver.h"
 
-MotorDriver::MotorDriver() {
+MotorDriver::MotorDriver() : leftScale(DEFAULT_LEFT_MOTOR_SCALE), rightScale(DEFAULT_RIGHT_MOTOR_SCALE) {
     // Constructor
 }
 
@@ -41,11 +41,27 @@ void MotorDriver::drive(int leftSpeed, int rightSpeed) {
     // =========================================================================
     // STEP 3: Write Speeds to Left and Right Motors
     // =========================================================================
-    // We constrain the input speed to [-255, 255] and call setMotorSpeed().
-    // You can also add safety features here (e.g. limiting acceleration or max speed).
+    // Apply calibration scaling factors to balance motor output
+    int scaledLeft = (int)(leftSpeed * leftScale);
+    int scaledRight = (int)(rightSpeed * rightScale);
     
-    int leftConstrained = constrain(leftSpeed, -255, 255);
-    int rightConstrained = constrain(rightSpeed, -255, 255);
+    // Dead-zone compensation: If the commanded speed is non-zero, ensure it is at least
+    // the minimum starting PWM (e.g., 80) so that the motor can overcome friction and spin.
+    const int MIN_SPIN_PWM = 80;
+    if (leftSpeed > 0 && scaledLeft < MIN_SPIN_PWM) {
+        scaledLeft = MIN_SPIN_PWM;
+    } else if (leftSpeed < 0 && scaledLeft > -MIN_SPIN_PWM) {
+        scaledLeft = -MIN_SPIN_PWM;
+    }
+
+    if (rightSpeed > 0 && scaledRight < MIN_SPIN_PWM) {
+        scaledRight = MIN_SPIN_PWM;
+    } else if (rightSpeed < 0 && scaledRight > -MIN_SPIN_PWM) {
+        scaledRight = -MIN_SPIN_PWM;
+    }
+    
+    int leftConstrained = constrain(scaledLeft, -255, 255);
+    int rightConstrained = constrain(scaledRight, -255, 255);
 
     // Call helper for left motor (passing PWM channel)
     setMotorSpeed(leftConstrained, LEDC_PWM_CH_LEFT, PIN_MOTOR_L_IN1, PIN_MOTOR_L_IN2);
@@ -60,6 +76,11 @@ void MotorDriver::stop() {
     // =========================================================================
     // Set speed to 0 for both motors to bring them to a halt.
     drive(0, 0);
+}
+
+void MotorDriver::setCalibrationScales(float left, float right) {
+    leftScale = left;
+    rightScale = right;
 }
 
 void MotorDriver::setMotorSpeed(int speed, uint8_t pwmChannel, uint8_t dirPin1, uint8_t dirPin2) {

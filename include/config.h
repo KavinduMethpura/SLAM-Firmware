@@ -10,12 +10,12 @@
 // L298N Motor Driver Pins
 // (Using LEDC on ESP32 for hardware PWM generation)
 #define PIN_MOTOR_L_PWM  18  // Left motor speed control pin
-#define PIN_MOTOR_L_IN1  14 // Left motor direction pin 1
-#define PIN_MOTOR_L_IN2  5  // Left motor direction pin 2
+#define PIN_MOTOR_L_IN1  5 // Left motor direction pin 1
+#define PIN_MOTOR_L_IN2  14  // Left motor direction pin 2
 
 #define PIN_MOTOR_R_PWM  23  // Right motor speed control pin
-#define PIN_MOTOR_R_IN1  2  // Right motor direction pin 1
-#define PIN_MOTOR_R_IN2  4  // Right motor direction pin 2
+#define PIN_MOTOR_R_IN1  4  // Right motor direction pin 1
+#define PIN_MOTOR_R_IN2  2  // Right motor direction pin 2
 
 // Servo Scanner Pin
 #define PIN_SERVO_SCAN   15  // MG90S Sweep Servo signal pin
@@ -63,6 +63,10 @@ const float ALPHA_ACCEL           = 0.02; // Accelerometer weight (low pass)
 
 // Serial Communication Settings
 #define SERIAL_BAUD_RATE    115200
+
+// Default Motor Calibration Scales (Adjust manually as needed)
+#define DEFAULT_LEFT_MOTOR_SCALE  1.0f
+#define DEFAULT_RIGHT_MOTOR_SCALE 1.0f
 
 // =============================================================================
 // NETWORK CONFIGURATION

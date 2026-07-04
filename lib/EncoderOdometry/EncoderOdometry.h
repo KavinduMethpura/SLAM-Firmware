@@ -53,6 +53,11 @@ public:
     void reset();
 
     /**
+     * @brief Gets the current raw tick counts for left and right encoders.
+     */
+    void getTicks(long &left, long &right) const;
+
+    /**
      * @brief Manually overrides the current yaw (theta) angle.
      * Useful when fusing with IMU data.
      * 

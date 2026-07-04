@@ -59,6 +59,16 @@ public:
      */
     void getCommandVelocity(float &outLinearX, float &outAngularZ);
 
+    /**
+     * @brief Retrieves the latest calibration scales requested by the host,
+     * and resets the new calibration command flag.
+     * 
+     * @param outLeft Outputs target left motor scale.
+     * @param outRight Outputs target right motor scale.
+     * @return true if a new calibration command was available.
+     */
+    bool getCalibrationCommand(float &outLeft, float &outRight);
+
     // =========================================================================
     // UPSTREAM SERIALIZATION METHODS (ESP32 -> Host)
     // =========================================================================
@@ -81,6 +91,11 @@ public:
      */
     void sendScan(int angle, int distanceMm);
 
+    /**
+     * @brief Transmits a raw debug/log message over UDP to the host.
+     */
+    void sendDebug(const char* message);
+
 private:
     WiFiUDP udp;
 
@@ -95,6 +110,10 @@ private:
     
     char cmdControl;
     bool newControlFlag;
+    
+    float cmdCalLeft;
+    float cmdCalRight;
+    bool newCalFlag;
 
     /**
      * @brief Private helper to parse a complete message line once received.

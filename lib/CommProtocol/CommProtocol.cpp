@@ -2,7 +2,8 @@
 
 CommProtocol::CommProtocol() 
     : rxIndex(0), cmdLinearX(0.0f), cmdAngularZ(0.0f), newCommandFlag(false),
-      cmdControl('\0'), newControlFlag(false) {
+      cmdControl('\0'), newControlFlag(false),
+      cmdCalLeft(1.0f), cmdCalRight(1.0f), newCalFlag(false) {
     memset(rxBuffer, 0, sizeof(rxBuffer));
 }
 
@@ -87,10 +88,13 @@ void CommProtocol::parseLine(char* line) {
     } else if (line[0] == 'C') {
         char type;
         sscanf(line, "C,%c", &type);
-        if (type == 'R' || type == 'C' || type == 'S') {
+        if (type == 'R' || type == 'C' || type == 'S' || type == 'I') {
             cmdControl = type;
             newControlFlag = true;
         }
+    } else if (line[0] == 'K') {
+        sscanf(line, "K,%f,%f", &cmdCalLeft, &cmdCalRight);
+        newCalFlag = true;
     }
 }
 
@@ -111,6 +115,16 @@ void CommProtocol::getCommandVelocity(float &outLinearX, float &outAngularZ) {
     outLinearX = cmdLinearX;
     outAngularZ = cmdAngularZ;
     newCommandFlag = false; // Clear flag on read
+}
+
+bool CommProtocol::getCalibrationCommand(float &outLeft, float &outRight) {
+    if (newCalFlag) {
+        outLeft = cmdCalLeft;
+        outRight = cmdCalRight;
+        newCalFlag = false;
+        return true;
+    }
+    return false;
 }
 
 void CommProtocol::sendOdom(float x, float y, float theta, float linearVel, float angularVel) {
@@ -154,6 +168,12 @@ void CommProtocol::sendScan(int angle, int distanceMm) {
     snprintf(txBuffer, sizeof(txBuffer), "$SCAN,%d,%d\n", angle, distanceMm);
     udp.beginPacket(HOST_IP, UDP_SEND_PORT);
     udp.write((uint8_t*)txBuffer, strlen(txBuffer));
+    udp.endPacket();
+}
+
+void CommProtocol::sendDebug(const char* message) {
+    udp.beginPacket(HOST_IP, UDP_SEND_PORT);
+    udp.write((uint8_t*)message, strlen(message));
     udp.endPacket();
 }
 
